@@ -22,17 +22,13 @@
             font-size: 2.5em;
             text-align: center;
             margin-top: 50px;
-
-            /* Subtle Text Shadow for Depth */
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
         }
-        /* Hover Effect */
         h1:hover {
             transform: scale(1.1);
             transition: transform 0.3s ease;
         }
-
-        
+       
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -43,11 +39,10 @@
             margin: 0;
             background-color: #f4f4f9;
             background-image: url('images/background.png');
-            background-size: cover; /* Scales image to cover the entire background */
-            background-position: center; /* Centers the image */
-            background-repeat: no-repeat; /* Prevents image from repeating */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
-
         #image-container {
             margin-bottom: 20px;
             border: 5px solid #ccc;
@@ -55,26 +50,21 @@
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
-
         #myImage {
-            width: 400px; 
+            width: 400px;
             height: 400px;
-            object-fit: cover; 
+            object-fit: cover;
             display: block;
-            opacity: 1; /* Start fully visible */
-            transition: opacity 0.3s ease-in-out; /* Smooth transition */
+            opacity: 1;
+            transition: opacity 0.3s ease-in-out;
         }
-
-        /* New CSS for when the image is loading */
         .image-loading {
-            opacity: 0; /* Make the image invisible */
+            opacity: 0;
         }
-
         #button-group {
-            display: flex; /* Makes the buttons sit next to each other */
-            gap: 15px;    /* Adds space between the buttons */
+            display: flex;
+            gap: 15px;
         }
-
         .action-button {
             padding: 12px 25px;
             font-size: 18px;
@@ -83,208 +73,156 @@
             border-radius: 5px;
             transition: background-color 0.3s ease;
         }
-
         #randomImageButton {
             background-color: #007bff;
             color: white;
         }
-
         #randomImageButton:hover {
             background-color: #0056b3;
         }
-
         #specialImageButton {
-            background-color: #28a745; /* A different color for the special button */
+            background-color: #28a745;
             color: white;
         }
-
         #specialImageButton:hover {
             background-color: #1e7e34;
         }
-        /* New CSS for the loading state */
         .loading {
-            background-color: #ffc107 !important; /* Yellow for attention */
+            background-color: #ffc107 !important;
             cursor: wait !important;
-            pointer-events: none; /* Disables clicking during the 'wait' state */
+            pointer-events: none;
         }
-        
-        /* NEW CSS for the text overlay */
+       
         #text-overlay {
-            position: fixed; /* Position relative to the viewport */
+            position: fixed;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%); /* Center it perfectly */
-            z-index: 1000; /* Ensure it's on top of everything */
+            transform: translate(-50%, -50%);
+            z-index: 1000;
             font-family: 'Comic Sans MS', sans-serif;
             font-size: 3em;
             font-weight: bold;
             color: white;
-            background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent black background */
+            background-color: rgba(0, 0, 0, 0.8);
             padding: 20px 40px;
             border-radius: 10px;
-            opacity: 0; /* Start hidden */
-            transition: opacity 0.3s ease-in-out; /* Smooth fade in/out */
-            pointer-events: none; /* Allows clicks to pass through when hidden */
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
-
         .show-text {
-            opacity: 1 !important; /* Force visibility */
+            opacity: 1 !important;
         }
-
     </style>
 </head>
 <body>
-
     <h1>Word Picture Challenge</h1>
-
-    <!-- 1. The Image Element -->
     <div id="image-container">
-        <!-- Start by showing the first image -->
         <img id="myImage" src="images/0.png" alt="Currently displayed image" decoding="async">
     </div>
-
-    <!-- 2. The Button Group -->
     <div id="button-group">
         <button id="randomImageButton" class="action-button">Show Random Image</button>
         <button id="specialImageButton" class="action-button">Back To Ready</button>
     </div>
-
-    <!-- 3. New Text Overlay Element -->
     <div id="text-overlay">NEW IMAGE</div>
-
-    
-<!-- 4. The JavaScript (UPDATED with New Text Overlay Logic) -->
+   
     <script>
-        // Get references to the HTML elements
         const imageElement = document.getElementById('myImage');
         const randomButton = document.getElementById('randomImageButton');
         const specialButton = document.getElementById('specialImageButton');
-        // New reference to the text overlay
-        const textOverlay = document.getElementById('text-overlay'); 
+        const textOverlay = document.getElementById('text-overlay');
+        const TOTAL_IMAGES = 8;
+        let currentImageIndex = 0;
+        const SPECIAL_IMAGE_PATH = 'images/0.png';
 
+        // === SHUFFLE BAG SYSTEM ===
+        let shuffleBag = [];
 
-        // Configuration
-        // This is the number of "flashcard" images (1.png to 8.png = 8 images).
-        // The index 0 is reserved for the 'Ready' screen.
-        const TOTAL_IMAGES = 8; 
-        let currentImageIndex = 0; 
-        const SPECIAL_IMAGE_PATH = 'images/0.png'; 
-        
-        // --- Feedback Function (for buttons) ---
+        function refillAndShuffleBag() {
+            shuffleBag = [];
+            for (let i = 1; i <= TOTAL_IMAGES; i++) {
+                shuffleBag.push(i);
+            }
+            // Fisher-Yates shuffle
+            for (let i = shuffleBag.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffleBag[i], shuffleBag[j]] = [shuffleBag[j], shuffleBag[i]];
+            }
+        }
+
+        function getNextShuffledImage() {
+            if (shuffleBag.length === 0) {
+                refillAndShuffleBag();
+            }
+            return shuffleBag.pop(); // Take from end for efficiency
+        }
+
+        // Initialize the bag on load
+        refillAndShuffleBag();
+
+        // === Button Feedback ===
         function setButtonLoading(button, originalText, isLoading) {
             if (isLoading) {
                 button.classList.add('loading');
                 button.textContent = 'Loading...';
             } else {
-                // Re-enable the button
                 button.classList.remove('loading');
                 button.textContent = originalText;
             }
         }
 
-        // --- Image Load Handler ---
-        // This function runs every time a new image finishes loading
+        // === Image Load Handler ===
         imageElement.addEventListener('load', function() {
-            // 1. Remove the loading class to make the image visible again (fades in due to CSS)
             imageElement.classList.remove('image-loading');
-
-            // 2. Re-enable the button that was just clicked
-            // Check which button is currently disabled and re-enable it
-            // Note: The text in setButtonLoading must match what was set initially
             if (randomButton.classList.contains('loading')) {
                 setButtonLoading(randomButton, "Show Random Image", false);
             } else if (specialButton.classList.contains('loading')) {
-                setButtonLoading(specialButton, "Ready!", false);
+                setButtonLoading(specialButton, "Back To Ready", false);
             }
         });
 
-        // --- Core Image Change Function ---
+        // === Core Image Change ===
         function changeImage(newPath, button) {
-            // 1. Check if already loading/disabled
-            if (button.classList.contains('loading')) {
-                return;
-            }
-
-            // 2. Set the visual loading state immediately for the button
-            const originalText = button.id === 'randomImageButton' ? "Show Random Image" : "Ready!";
+            if (button.classList.contains('loading')) return;
+            const originalText = button.id === 'randomImageButton' ? "Show Random Image" : "Back To Ready";
             setButtonLoading(button, originalText, true);
-
-            // 3. Set the image element to the loading state (opacity: 0)
             imageElement.classList.add('image-loading');
-
-            // 4. Update the image source (The 'load' event handler above will manage visibility)
             imageElement.src = newPath;
         }
 
-        // --- Random Button Logic (UPDATED) ---
+        // === Random Button with Shuffle Bag ===
         randomButton.addEventListener('click', function() {
-            
-            // 1. Check if already loading/disabled
-            if (randomButton.classList.contains('loading')) {
-                return;
-            }
+            if (randomButton.classList.contains('loading')) return;
 
-            // Temporarily set the button to 'loading' state to prevent re-clicks during the 1-second display.
-            randomButton.classList.add('loading'); 
-            
-            // 2. Show the text overlay
+            randomButton.classList.add('loading');
             textOverlay.classList.add('show-text');
 
-            // 3. Set a timeout for 1 second
             setTimeout(() => {
-                
-                // a. Hide the text overlay
                 textOverlay.classList.remove('show-text');
+                randomButton.classList.remove('loading');
 
-                // b. Remove the temporary 'loading' state so that `changeImage` can set up its own state.
-                randomButton.classList.remove('loading'); 
-
-                // c. Generate a new index different from the current one
-                let newIndex;
-                do {
-                    // Generate a random index between 1 and TOTAL_IMAGES (i.e., 1 to 8)
-                    newIndex = Math.floor(Math.random() * TOTAL_IMAGES) + 1;
-                } while (newIndex === currentImageIndex); // <<< THE LOGIC TO PREVENT DUPLICATES
-
-                // Update the current index and path
+                // Get next image from shuffle bag
+                const newIndex = getNextShuffledImage();
                 currentImageIndex = newIndex;
                 const newImagePath = `images/${currentImageIndex}.png`;
 
-                // d. Reset special button text
                 specialButton.textContent = "Back To Ready";
-
-                // e. Call the shared image change function (which will re-apply 'loading' class 
-                //    and change button text to 'Loading...').
                 changeImage(newImagePath, randomButton);
-
-            }, 1000); // 1000 milliseconds = 1 second
+            }, 1000);
         });
 
-
-        // --- Special Button Logic (UNCHANGED) ---
+        // === Special Button (Back to Ready) ===
         specialButton.addEventListener('click', function() {
-            
-            // Check if the special image is ALREADY showing (index 0)
-            if (currentImageIndex === 0) {
-                return; 
-            }
-            
-            // Set index and reset random button text
-            currentImageIndex = 0; 
+            if (currentImageIndex === 0) return;
+            currentImageIndex = 0;
             randomButton.textContent = "Show Random Image";
-
-            // Call the shared image change function
             changeImage(SPECIAL_IMAGE_PATH, specialButton);
         });
 
-
-        // Set initial button text when the page loads
+        // Initial setup
         randomButton.textContent = "Show Random Image";
-        specialButton.textContent = "Ready!";
-        
-        // **Important:** Initial state setup. The first image is already loaded 
-        // when the page loads, so we don't need the 'image-loading' class.
+        specialButton.textContent = "Back To Ready";
     </script>
 </body>
 </html>
